@@ -14,6 +14,26 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'home' | 'tickets' | 'bank' | 'profile'>('home');
   const [showVerify, setShowVerify] = useState(false);
   const [tick, setTick] = useState(0);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const unsub = onSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
+      if (doc.exists()) {
+        setUserData({ id: doc.id, ...doc.data() });
+      } else {
+        setUserData({
+          id: auth.currentUser!.uid,
+          email: auth.currentUser!.email || '',
+          name: auth.currentUser!.displayName || 'Usuário',
+          photoUrl: auth.currentUser!.photoURL || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop',
+          cpf: '***.***.***-**',
+          balance: 'R$ 3.250,00'
+        });
+      }
+    });
+    return () => unsub();
+  }, []);
 
   return (
     <div className="bg-[#050505] min-h-screen text-white font-sans flex flex-col relative pb-24 overflow-x-hidden selection:bg-blue-500/30">
@@ -21,8 +41,8 @@ export default function Dashboard() {
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'home' && <InicioTab onVerify={() => setShowVerify(true)} tick={tick} />}
         {activeTab === 'tickets' && <PassagensTab />}
-        {activeTab === 'bank' && <BancoTab />}
-        {activeTab === 'profile' && <PerfilTab />}
+        {activeTab === 'bank' && <BancoTab userData={userData} />}
+        {activeTab === 'profile' && <PerfilTab userData={userData} />}
       </main>
 
       {/* Bottom Navigation */}
@@ -296,7 +316,7 @@ function PassagensTab() {
   );
 }
 
-function BancoTab() {
+function BancoTab({ userData }: { userData: any }) {
   return (
     <div className="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-10">
       <header className="flex justify-between items-center mb-6">
@@ -320,7 +340,7 @@ function BancoTab() {
           <p className="text-sm font-medium text-slate-300">Saldo total</p>
           <ScanFace size={24} className="text-blue-300" />
         </div>
-        <h2 className="text-4xl font-bold text-white mt-2 relative z-10">R$ 3.250,00</h2>
+        <h2 className="text-4xl font-bold text-white mt-2 relative z-10">{userData?.balance || 'R$ 0,00'}</h2>
         
         <div className="mt-8 flex justify-end relative z-10">
           <button className="bg-white/10 backdrop-blur-md p-2 rounded-xl">
@@ -382,7 +402,7 @@ function TransactionItem({ title, date, amount, icon, bg, border = true }: any) 
   );
 }
 
-function PerfilTab() {
+function PerfilTab({ userData }: { userData: any }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -404,14 +424,14 @@ function PerfilTab() {
 
       <div className="flex flex-col items-center mb-8">
         <div className="relative mb-4">
-          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop" className="w-32 h-32 rounded-full border-4 border-[#111113] object-cover shadow-2xl" alt="Profile" />
+          <img src={userData?.photoUrl || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop"} className="w-32 h-32 rounded-full border-4 border-[#111113] object-cover shadow-2xl" alt="Profile" />
           <button className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white border-4 border-[#050505] shadow-lg">
             <PenTool size={16} />
           </button>
         </div>
-        <h2 className="text-3xl font-bold">Marcos Furtado</h2>
-        <p className="text-slate-400 text-sm mt-1 mb-2">marcosfurtado@email.com</p>
-        <p className="text-slate-500 text-sm font-mono tracking-widest">CPF: ***.***.***-**</p>
+        <h2 className="text-3xl font-bold">{userData?.name || 'Usuário'}</h2>
+        <p className="text-slate-400 text-sm mt-1 mb-2">{userData?.email || ''}</p>
+        <p className="text-slate-500 text-sm font-mono tracking-widest">CPF: {userData?.cpf || '***.***.***-**'}</p>
       </div>
 
       <div className="space-y-3">

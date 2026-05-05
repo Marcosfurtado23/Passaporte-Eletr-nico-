@@ -13,23 +13,11 @@ export default function Admin() {
     const unsub = auth.onAuthStateChanged(async (user) => {
       if(user) {
         // Check if user is official admin by email
-        if (
-          user.email?.toLowerCase() === 'marcossilva192024@gmail.com' ||
-          user.email?.toLowerCase() === 'marcosveo71@gmail.com'
-        ) {
+        if (user.email?.toLowerCase() === 'marcossilva192024@gmail.com') {
           setIsAdminLoggedIn(true);
         } else {
-          // Check if they have the admin document
-          try {
-            const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-            if (adminDoc.exists()) {
-              setIsAdminLoggedIn(true);
-            } else {
-              setIsAdminLoggedIn(false);
-            }
-          } catch(e) {
-            setIsAdminLoggedIn(false);
-          }
+          setIsAdminLoggedIn(false);
+          await auth.signOut(); // Force sign out if not admin
         }
       } else {
         setIsAdminLoggedIn(false);
@@ -51,57 +39,28 @@ export default function Admin() {
 function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [email, setEmail] = useState('admin@uswallet.com');
-  const [password, setPassword] = useState('USA2024ADMIN');
-  const [useEmail, setUseEmail] = useState(false);
+  const [email, setEmail] = useState('marcossilva192024@gmail.com');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const isIframe = window !== window.parent;
-
-  const handleGoogleLogin = async () => {
-    if (isIframe) {
-      setErrorDetails("ATENÇÃO: O Login do Google bloqueia pop-ups na visualização (iframe). Clique no botão 'Open in new tab' (ícone de tela cheia no topo direito) para abrir em uma nova aba, ou use o botão 'Usar E-mail'.");
-      return;
-    }
-    setLoading(true);
-    setErrorDetails(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      const cleanEmail = result.user.email?.toLowerCase();
-      if (cleanEmail !== 'marcossilva192024@gmail.com') {
-        setErrorDetails("Acesso restrito: Apenas o administrador oficial pode acessar este painel.");
-        await auth.signOut();
-      }
-    } catch(err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        setErrorDetails("Janela fechada. Dica: Abra o app em uma nova aba (novo tab) para o Google Login funcionar.");
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setErrorDetails(`Erro de Domínio: Adicione o domínio "${window.location.hostname}" no Firebase Console > Authentication > Settings > Authorized domains.`);
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setErrorDetails("Login do Google não ativado! Vá no Firebase Console > Authentication > Sign-in method > Selecione 'Google', ative e salve.");
-      } else {
-        setErrorDetails(`Erro de autenticação: ${err.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    
+    if (cleanEmail !== 'marcossilva192024@gmail.com') {
+      setErrorDetails("Acesso Negado: E-mail não autorizado.");
+      return;
+    }
+
     setLoading(true);
     setErrorDetails(null);
     try {
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (err: any) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-          // If the user doesn't exist, we try to create it automatically
-          const userCred = await createUserWithEmailAndPassword(auth, email, password);
-          await setDoc(doc(db, 'admins', userCred.user.uid), {
-            secretCode: 'USA2024ADMIN'
-          });
+          // If the user doesn't exist yet, automatically create
+          await createUserWithEmailAndPassword(auth, cleanEmail, password);
         } else {
           throw err;
         }
@@ -110,7 +69,7 @@ function AdminLogin() {
       if (err.code === 'auth/operation-not-allowed') {
          setErrorDetails("Login de E-mail/Senha não está ativado! Ative 'Email/Password' no Firebase Authentication para usar este método.");
       } else {
-         setErrorDetails(`Erro de E-mail: ${err.message}`);
+         setErrorDetails(`Erro: ${err.message}`);
       }
     } finally {
       setLoading(false);
@@ -149,78 +108,49 @@ function AdminLogin() {
           </div>
         )}
 
-        {useEmail ? (
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <div className="text-left space-y-1">
-              <label className="text-sm font-medium text-white/90 ml-1">E-mail</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={18} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  disabled={loading}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
-                  placeholder="admin@uswallet.com"
-                />
-              </div>
+        <form onSubmit={handleEmailLogin} className="space-y-4">
+          <div className="text-left space-y-1">
+            <label className="text-sm font-medium text-white/90 ml-1">E-mail Administrativo</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={18} />
+              <input 
+                type="email" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                disabled={loading}
+                required
+                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
+                placeholder="marcossilva192024@gmail.com"
+              />
             </div>
-            <div className="text-left space-y-1">
-              <label className="text-sm font-medium text-white/90 ml-1">Senha</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={18} />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-            <button 
-              type="submit"
-              disabled={loading} 
-              className="w-full bg-blue-600/80 hover:bg-blue-600 backdrop-blur-xl disabled:bg-blue-800/50 border border-blue-500/40 text-white font-semibold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg cursor-pointer disabled:cursor-not-allowed shadow-[0_8px_32px_rgba(0,0,0,0.3)] mt-4"
-            >
-              {loading ? (
-                 <><Loader2 size={24} className="animate-spin" /> Verificando...</> 
-              ) : (
-                 <>Acessar / Cadastrar</>
-              )}
-            </button>
-            <button 
-              type="button"
-              onClick={() => setUseEmail(false)}
-              className="w-full text-white/70 hover:text-white text-sm font-medium mt-2"
-            >
-               Voltar para Login Google
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <button 
-              onClick={handleGoogleLogin} 
-              disabled={loading} 
-              className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-xl disabled:bg-white/10 border border-white/40 text-white font-semibold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg cursor-pointer disabled:cursor-not-allowed shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-            >
-              {loading ? (
-                <><Loader2 size={24} className="animate-spin" /> Acessando...</> 
-              ) : (
-                <><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" /> Entrar como Admin</>
-              )}
-            </button>
-            <button 
-              onClick={() => { setUseEmail(true); setErrorDetails(null); }}
-              className="w-full bg-transparent hover:bg-white/5 border border-white/20 text-white font-medium py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm"
-            >
-              <Mail size={16} /> Usar E-mail Padrão
-            </button>
           </div>
-        )}
+          <div className="text-left space-y-1">
+            <label className="text-sm font-medium text-white/90 ml-1">Senha</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={18} />
+              <input 
+                type="password" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                disabled={loading}
+                required
+                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+          <button 
+            type="submit"
+            disabled={loading} 
+            className="w-full bg-blue-600/80 hover:bg-blue-600 backdrop-blur-xl disabled:bg-blue-800/50 border border-blue-500/40 text-white font-semibold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg cursor-pointer disabled:cursor-not-allowed shadow-[0_8px_32px_rgba(0,0,0,0.3)] mt-4"
+          >
+            {loading ? (
+               <><Loader2 size={24} className="animate-spin" /> Verificando...</> 
+            ) : (
+               <>Acessar Painel</>
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -414,34 +344,7 @@ function AdminDashboard() {
         )}
 
         {activeTab === 'manage' && (
-          <div>
-             <h2 className="text-2xl font-bold mb-8 text-white">Gerenciar e Excluir Usuários</h2>
-             <div className="space-y-4">
-               {users.length === 0 ? (
-                 <div className="bg-[#111113] border border-white/10 rounded-2xl p-10 text-center text-slate-400">
-                   Nenhum usuário encontrado no sistema.
-                 </div>
-               ) : (
-                 users.map(u => (
-                   <div key={u.id} className="bg-[#111113] border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#0a0a0c] rounded-full border border-white/10 flex items-center justify-center">
-                          <Users className="text-blue-400" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">{u.email}</p>
-                          <p className="text-sm text-slate-400">ID: {u.id}</p>
-                        </div>
-                      </div>
-                      
-                      <button onClick={() => handleDeleteUserAndData(u.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-colors border border-red-500/20">
-                         <UserMinus size={18} /> Excluir Todos os Dados
-                      </button>
-                   </div>
-                 ))
-               )}
-             </div>
-          </div>
+          <UserManager users={users} onDelete={handleDeleteUserAndData} />
         )}
       </div>
     </div>
@@ -757,3 +660,120 @@ function PassportForm({ users, initialData, onComplete }: { users: any[], initia
     </form>
   )
 }
+
+function UserManager({ users, onDelete }: { users: any[], onDelete: (id: string) => void }) {
+  const [editingUser, setEditingUser] = useState<any>(null);
+
+  return (
+    <div>
+       <h2 className="text-2xl font-bold mb-8 text-white">Gerenciar Usuários</h2>
+       
+       {editingUser && (
+         <UserEditForm user={editingUser} onComplete={() => setEditingUser(null)} />
+       )}
+
+       <div className="space-y-4">
+         {users.length === 0 ? (
+           <div className="bg-[#111113] border border-white/10 rounded-2xl p-10 text-center text-slate-400">
+             Nenhum usuário encontrado no sistema.
+           </div>
+         ) : (
+           users.map(u => (
+             <div key={u.id} className="bg-[#111113] border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {u.photoUrl ? (
+                    <img src={u.photoUrl} alt="Foto" className="w-12 h-12 rounded-full object-cover border border-white/10" />
+                  ) : (
+                    <div className="w-12 h-12 bg-[#0a0a0c] rounded-full border border-white/10 flex items-center justify-center">
+                      <Users className="text-blue-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold text-lg">{u.name || 'Sem Nome'}</p>
+                    <p className="text-sm text-slate-400">{u.email}</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button onClick={() => setEditingUser(u)} className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-colors border border-blue-500/20">
+                    <Edit2 size={18} /> Editar Perfil Visível
+                  </button>
+                  <button onClick={() => onDelete(u.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-colors border border-red-500/20">
+                     <UserMinus size={18} /> Excluir Todos os Dados
+                  </button>
+                </div>
+             </div>
+           ))
+         )}
+       </div>
+    </div>
+  )
+}
+
+function UserEditForm({ user, onComplete }: { user: any, onComplete: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user.name || '',
+    email: user.email || '',
+    cpf: user.cpf || '***.***.***-**',
+    photoUrl: user.photoUrl || '',
+    balance: user.balance || 'R$ 0,00'
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        ...formData,
+        updatedAt: Date.now()
+      });
+      onComplete();
+    } catch(err) {
+      console.error(err);
+      alert("Erro ao salvar usuário.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-[#1a1a1f] border border-blue-500/30 rounded-2xl p-6 mb-8 mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="md:col-span-2 text-lg font-bold border-b border-white/10 pb-2 mb-2 text-blue-400">Editando Perfil: {user.email}</div>
+      
+      <div className="space-y-1">
+        <label className="text-xs text-slate-400 uppercase font-bold">Nome Visível</label>
+        <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-500" placeholder="Nome Completo" />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-slate-400 uppercase font-bold">E-mail Visível</label>
+        <input required type="text" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-500" placeholder="usuario@email.com" />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-slate-400 uppercase font-bold">CPF</label>
+        <input required type="text" value={formData.cpf} onChange={e => setFormData({...formData, cpf: e.target.value})} className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-500" placeholder="***.***.***-**" />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-slate-400 uppercase font-bold">Saldo Total Visível</label>
+        <input required type="text" value={formData.balance} onChange={e => setFormData({...formData, balance: e.target.value})} className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-500" placeholder="R$ 3.250,00" />
+      </div>
+
+      <div className="space-y-1 md:col-span-2">
+        <label className="text-xs text-slate-400 uppercase font-bold">URL da Foto do Perfil</label>
+        <input required type="text" value={formData.photoUrl} onChange={e => setFormData({...formData, photoUrl: e.target.value})} className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-500" placeholder="https://..." />
+      </div>
+
+      <div className="md:col-span-2 flex justify-end gap-3 mt-4 border-t border-white/10 pt-6">
+        <button type="button" onClick={onComplete} className="px-6 py-3 rounded-xl font-bold bg-[#0a0a0c] text-slate-300 hover:text-white transition-colors">Cancelar</button>
+        <button type="submit" disabled={loading} className="px-6 py-3 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2">
+          {loading ? 'Salvando...' : 'Salvar Alterações do Usuário'}
+        </button>
+      </div>
+    </form>
+  )
+}
+

@@ -56,7 +56,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'createdAt'])
-        && data.keys().size() == 2
+        && data.keys().size() <= 8
         && data.email is string
         && data.createdAt is number;
     }
