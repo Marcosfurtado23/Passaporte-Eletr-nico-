@@ -13,7 +13,7 @@ export default function Admin() {
     const unsub = auth.onAuthStateChanged(async (user) => {
       if(user) {
         // Check if user is official admin by email
-        if (user.email?.toLowerCase() === 'marcossilva192024@gmail.com') {
+        if (user.email?.toLowerCase() === 'admin@admin.com') {
           setIsAdminLoggedIn(true);
         } else {
           setIsAdminLoggedIn(false);
@@ -47,8 +47,8 @@ function AdminLogin() {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     
-    if (cleanEmail !== 'marcossilva192024@gmail.com') {
-      setErrorDetails("Acesso Negado: E-mail não autorizado.");
+    if (cleanEmail !== 'admin@admin.com') {
+      setErrorDetails("Acesso Negado: Utilize o e-mail 'admin@admin.com' para acessar como administrador.");
       return;
     }
 
@@ -120,7 +120,7 @@ function AdminLogin() {
                 disabled={loading}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
-                placeholder="admin@email.com"
+                placeholder="admin@admin.com"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ function AdminLogin() {
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'users' | 'flights' | 'passports' | 'manage'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'flights' | 'passports' | 'manage' | 'preview'>('users');
   const [verifications, setVerifications] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [passports, setPassports] = useState<any[]>([]);
@@ -268,6 +268,9 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('manage')} className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${activeTab === 'manage' ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <Users size={18} /> Gerenciar Usuários
           </button>
+          <button onClick={() => setActiveTab('preview')} className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${activeTab === 'preview' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <LayoutDashboard size={18} /> Prévia do App
+          </button>
         </nav>
         <button onClick={() => { auth.signOut(); navigate('/login'); }} className="mt-auto flex items-center gap-2 px-4 py-3 text-slate-400 hover:text-red-400 transition-colors"><LogOut size={20}/> Sair</button>
       </div>
@@ -345,6 +348,17 @@ function AdminDashboard() {
 
         {activeTab === 'manage' && (
           <UserManager users={users} onDelete={handleDeleteUserAndData} />
+        )}
+        {activeTab === 'preview' && (
+          <div className="flex flex-col h-[85vh]">
+            <div className="flex justify-between items-center mb-4">
+               <h2 className="text-2xl font-bold text-white">Prévia do App do Usuário</h2>
+            </div>
+            <p className="text-slate-400 mb-6 text-sm">Visualize a experiência do usuário pelo aplicativo ao vivo. (Simulando uma tela de celular vertical).</p>
+            <div className="flex-1 bg-black rounded-[2.5rem] border-[12px] border-slate-800 overflow-hidden relative shadow-[0_0_50px_rgba(0,0,0,0.5)] mx-auto w-full max-w-[400px]">
+              <iframe src="/dashboard" className="w-full h-full border-0 bg-[#050505]" title="User App Preview" />
+            </div>
+          </div>
         )}
       </div>
     </div>
