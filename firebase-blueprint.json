@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "Verification": {
+      "title": "Verification",
+      "description": "User verification data containing photo and location.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "photo": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "photo", "location", "status", "createdAt", "updatedAt"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "User flight ticket.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "originCity": { "type": "string" },
+        "originCode": { "type": "string" },
+        "destinationCity": { "type": "string" },
+        "destinationCode": { "type": "string" },
+        "departureTime": { "type": "number" },
+        "flightNumber": { "type": "string" },
+        "duration": { "type": "string" },
+        "seat": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "image": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "originCity", "originCode", "destinationCity", "destinationCode", "departureTime", "flightNumber", "duration", "seat", "status", "image", "createdAt"]
+    },
+    "Passport": {
+      "title": "Passport",
+      "description": "User Brazilian passport details.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "tipo": { "type": "string" },
+        "paisEmissor": { "type": "string" },
+        "numero": { "type": "string" },
+        "sobrenome": { "type": "string" },
+        "nome": { "type": "string" },
+        "nacionalidade": { "type": "string" },
+        "dataNascimento": { "type": "string" },
+        "identidade": { "type": "string" },
+        "sexo": { "type": "string" },
+        "naturalidade": { "type": "string" },
+        "filiacao1": { "type": "string" },
+        "filiacao2": { "type": "string" },
+        "dataExpedicao": { "type": "string" },
+        "autoridade": { "type": "string" },
+        "validoAte": { "type": "string" },
+        "mrz1": { "type": "string" },
+        "mrz2": { "type": "string" },
+        "photo": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "tipo", "paisEmissor", "numero", "sobrenome", "nome", "nacionalidade", "dataNascimento", "identidade", "sexo", "naturalidade", "filiacao1", "filiacao2", "dataExpedicao", "autoridade", "validoAte", "mrz1", "mrz2", "photo", "createdAt", "updatedAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "verifications/{docId}": {
+      "schema": "Verification",
+      "description": "Stores user verifications."
+    },
+    "tickets/{docId}": {
+      "schema": "Ticket",
+      "description": "Stores user flight tickets."
+    },
+    "passports/{docId}": {
+      "schema": "Passport",
+      "description": "Stores user passports."
+    },
+    "users/{docId}": {
+      "schema": "User",
+      "description": "Stores basic user info."
+    }
+  }
+}

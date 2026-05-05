@@ -1,0 +1,6 @@
+{
+  "name": "Passaporte Digital Americano",
+  "description": "Uma simulação interativa de um passaporte digital americano (U.S. Digital Passport) estilo carteira de identidade digital.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -1,0 +1,144 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'marcossilva192024@gmail.com' || 
+        request.auth.token.email == 'Marcossilva192024@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidVerification(data) {
+      return data.keys().hasAll(['userId', 'photo', 'location', 'status', 'createdAt', 'updatedAt']) 
+        && data.keys().size() == 6
+        && data.userId == request.auth.uid
+        && data.photo is string
+        && data.photo.size() <= 1000000
+        && data.location is map
+        && data.location.keys().hasAll(['lat', 'lng'])
+        && data.location.lat is number
+        && data.location.lng is number
+        && data.status in ['pending', 'approved', 'rejected']
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    function isValidTicket(data) {
+      return data.keys().hasAll(['userId', 'originCity', 'originCode', 'destinationCity', 'destinationCode', 'departureTime', 'flightNumber', "duration", "seat", "status", "image", "createdAt"])
+        && data.keys().size() == 12
+        && data.userId is string
+        && data.originCity is string
+        && data.originCode is string
+        && data.destinationCity is string
+        && data.destinationCode is string
+        && data.departureTime is number
+        && data.flightNumber is string
+        && data.duration is string
+        && data.seat is string
+        && data.status in ['pending', 'confirmed', 'cancelled']
+        && data.image is string
+        && data.createdAt is number;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'createdAt'])
+        && data.keys().size() == 2
+        && data.email is string
+        && data.createdAt is number;
+    }
+
+    function isValidPassport(data) {
+      return data.keys().hasAll(['userId', 'tipo', 'paisEmissor', 'numero', 'sobrenome', 'nome', 'nacionalidade', 'dataNascimento', 'identidade', 'sexo', 'naturalidade', 'filiacao1', 'filiacao2', 'dataExpedicao', 'autoridade', 'validoAte', 'mrz1', 'mrz2', 'photo', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 21
+        && data.userId is string
+        && data.tipo is string
+        && data.paisEmissor is string
+        && data.numero is string
+        && data.sobrenome is string
+        && data.nome is string
+        && data.nacionalidade is string
+        && data.dataNascimento is string
+        && data.identidade is string
+        && data.sexo is string
+        && data.naturalidade is string
+        && data.filiacao1 is string
+        && data.filiacao2 is string
+        && data.dataExpedicao is string
+        && data.autoridade is string
+        && data.validoAte is string
+        && data.mrz1 is string
+        && data.mrz2 is string
+        && data.photo is string
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    match /users/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidId(docId)
+        && docId == request.auth.uid
+        && isValidUser(incoming());
+      allow update: if isSignedIn()
+        && isValidUser(incoming());
+    }
+
+    match /tickets/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidTicket(incoming());
+      allow update: if isSignedIn()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+        && incoming().status in ['pending', 'confirmed', 'cancelled'];
+      allow delete: if isSignedIn();
+    }
+
+    match /passports/{docId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAdmin() && isValidPassport(incoming());
+      allow update: if isAdmin() && isValidPassport(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /verifications/{docId} {
+      // User can create their own verification. Admin can read/update all.
+      allow create: if isSignedIn() 
+        && isValidId(docId) 
+        && docId == request.auth.uid
+        && isValidVerification(incoming())
+        && incoming().createdAt == request.time.toMillis()
+        && incoming().updatedAt == request.time.toMillis();
+        
+      // For demo purposes, any signed in user can read all verifications in the admin panel
+      allow read: if isSignedIn(); 
+      allow list: if isSignedIn();
+
+      allow update: if isSignedIn()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && incoming().status in ['pending', 'approved', 'rejected']
+        && incoming().updatedAt == request.time.toMillis();
+    }
+
+    match /admins/{docId} {
+      allow read: if isSignedIn() && docId == request.auth.uid;
+      allow create: if isSignedIn() 
+        && docId == request.auth.uid 
+        && incoming().keys().hasAll(['secretCode'])
+        && incoming().secretCode == 'USA2024ADMIN';
+    }
+  }
+}
