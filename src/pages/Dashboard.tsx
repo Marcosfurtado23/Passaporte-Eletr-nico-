@@ -125,7 +125,7 @@ function InicioTab({ onVerify, tick }: { onVerify: () => void, tick: number }) {
              <div className="flex gap-4">
                 <div className="w-[100px] shrink-0 flex flex-col items-center">
                   <div className="w-[90px] h-[120px] bg-slate-200 rounded-[2px] overflow-hidden border border-[#d1d5db]">
-                    <img src={passport.photo} className="w-full h-full object-cover" alt="Photo" />
+                    <img src={passport.photo} className="w-full h-full object-cover" alt="Photo" referrerPolicy="no-referrer" />
                   </div>
                   <div className="mt-3 text-center border-t border-black/20 w-full pt-1">
                      <p className="text-[5px] text-black">ASSINATURA DO TITULAR / HOLDER'S SIGNATURE</p>
@@ -282,7 +282,7 @@ function PassagensTab() {
                 {ticket.status === 'pending' && <span className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Pendente</span>}
                 {ticket.status === 'cancelled' && <span className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Cancelada</span>}
 
-                <img src={ticket.image || "https://images.unsplash.com/photo-1558582823-7fa364cd05ce?q=80&w=200&h=300&auto=format&fit=crop"} className="w-20 h-28 object-cover rounded-2xl" alt="Destination" />
+                <img src={ticket.image || "https://images.unsplash.com/photo-1558582823-7fa364cd05ce?q=80&w=200&h=300&auto=format&fit=crop"} className="w-20 h-28 object-cover rounded-2xl" alt="Destination" referrerPolicy="no-referrer" />
              </div>
           </div>
         ))}
@@ -424,7 +424,7 @@ function PerfilTab({ userData, onVerify }: { userData: any, onVerify: () => void
 
       <div className="flex flex-col items-center mb-8">
         <div className="relative mb-4">
-          <img src={userData?.photoUrl || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop"} className="w-32 h-32 rounded-full border-4 border-[#111113] object-cover shadow-2xl" alt="Profile" />
+          <img src={userData?.photoUrl || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop"} className="w-32 h-32 rounded-full border-4 border-[#111113] object-cover shadow-2xl" alt="Profile" referrerPolicy="no-referrer" />
           <button className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white border-4 border-[#050505] shadow-lg">
             <PenTool size={16} />
           </button>
@@ -496,6 +496,8 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
     checkExisting();
   }, []);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const startVerification = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -505,7 +507,44 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
         (pos) => setLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
         (err) => console.error(err)
       );
-    } catch(err) { alert("Permissão de câmera negada ou dispositivo sem câmera."); }
+    } catch(err) { 
+       alert("Permissão de câmera negada ou indisponível. Por favor, adicione uma foto manualmente.");
+       if (fileInputRef.current) {
+         fileInputRef.current.click();
+       }
+    }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !auth.currentUser) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+       const dataUrl = evt.target?.result as string;
+       setSubmitting(true);
+       navigator.geolocation.getCurrentPosition(
+         (pos) => setLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+         (err) => console.error(err)
+       );
+       const userLocation = location || { lat: -23.5505, lng: -46.6333 };
+       try {
+         await setDoc(doc(db, 'verifications', auth.currentUser!.uid), {
+           userId: auth.currentUser!.uid,
+           photo: dataUrl,
+           location: userLocation,
+           status: 'pending',
+           createdAt: Date.now(),
+           updatedAt: Date.now()
+         });
+         setPhoto(dataUrl);
+       } catch(err) {
+         console.error(err);
+         alert("Erro ao salvar dados!");
+       } finally {
+         setSubmitting(false);
+       }
+    };
+    reader.readAsDataURL(file);
   }
 
   const takePhoto = async () => {
@@ -564,6 +603,7 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
              <button onClick={startVerification} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-blue-500/20 text-lg">
                 <Camera size={24} /> Iniciar Verificação
              </button>
+             <input type="file" accept="image/*" capture="user" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
           </div>
         )}
 
@@ -589,7 +629,7 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
         {photo && (
            <div className="w-full flex flex-col items-center text-center">
              <div className="w-48 h-48 rounded-full overflow-hidden mb-8 border-4 border-emerald-500 relative shadow-xl shadow-emerald-500/20">
-               <img src={photo} className="w-full h-full object-cover transform -scale-x-100" alt="Verification selfie" />
+               <img src={photo} className="w-full h-full object-cover transform -scale-x-100" alt="Verification selfie" referrerPolicy="no-referrer" />
              </div>
              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-6 rounded-3xl w-full mb-6">
                 <CheckCircle size={48} className="mx-auto mb-4" />

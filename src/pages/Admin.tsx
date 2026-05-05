@@ -294,7 +294,7 @@ function AdminDashboard() {
                       <h3 className="font-bold text-lg border-b border-white/10 pb-2 mb-4 text-slate-200">Verificação de Indivíduo</h3>
                       <div className="flex flex-col md:flex-row gap-8">
                         <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-slate-700 shrink-0 bg-[#0a0a0c] relative">
-                          <img src={demoData.photo} className="w-full h-full object-cover transform -scale-x-100" />
+                          <img src={demoData.photo} className="w-full h-full object-cover transform -scale-x-100" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-1">
                           <div className="grid grid-cols-2 gap-4">
@@ -541,7 +541,7 @@ function PassportsManager({ users, passports }: { users: any[], passports: any[]
              return (
                <div key={p.id} className="bg-[#111113] border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                  <div className="flex items-center gap-4">
-                   <img src={p.photo} alt="Foto" className="w-16 h-16 rounded object-cover border border-white/10" />
+                   <img src={p.photo} alt="Foto" className="w-16 h-16 rounded object-cover border border-white/10" referrerPolicy="no-referrer" />
                    <div>
                      <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 mb-2 inline-block">{userEmail}</span>
                      <h4 className="text-xl font-bold">{p.nome} {p.sobrenome}</h4>
@@ -682,7 +682,7 @@ function UserManager({ users, onDelete }: { users: any[], onDelete: (id: string)
              <div key={u.id} className="bg-[#111113] border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   {u.photoUrl ? (
-                    <img src={u.photoUrl} alt="Foto" className="w-12 h-12 rounded-full object-cover border border-white/10" />
+                    <img src={u.photoUrl} alt="Foto" className="w-12 h-12 rounded-full object-cover border border-white/10" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-12 h-12 bg-[#0a0a0c] rounded-full border border-white/10 flex items-center justify-center">
                       <Users className="text-blue-400" />
