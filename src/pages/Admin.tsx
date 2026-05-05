@@ -606,14 +606,17 @@ function PassportForm({ users, initialData, onComplete }: { users: any[], initia
     setLoading(true);
     
     try {
+      const dataToSave = { ...formData };
+      if (dataToSave.id) delete dataToSave.id;
+
       if (initialData) {
         await updateDoc(doc(db, 'passports', initialData.id), {
-          ...formData,
+          ...dataToSave,
           updatedAt: Date.now()
         });
       } else {
         await addDoc(collection(db, 'passports'), {
-          ...formData,
+          ...dataToSave,
           createdAt: Date.now(),
           updatedAt: Date.now()
         });

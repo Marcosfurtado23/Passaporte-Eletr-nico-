@@ -494,6 +494,7 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
       }
     };
     checkExisting();
+    startVerification(); // Start camera automatically upon view open
   }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -571,6 +572,13 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
 
   const takePhoto = async () => {
     if (!videoRef.current || !auth.currentUser) return;
+    
+    // Check if video is actually playing and has dimensions
+    if (videoRef.current.readyState < 2 || !videoRef.current.videoWidth) {
+      alert("Câmera inicializando. Aguarde um instante...");
+      return;
+    }
+
     setSubmitting(true);
     const canvas = document.createElement('canvas');
     const MAX_WIDTH = 600;
