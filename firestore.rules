@@ -95,6 +95,7 @@ service cloud.firestore {
         && isValidUser(incoming());
       allow update: if isSignedIn()
         && isValidUser(incoming());
+      allow delete: if isAdmin();
     }
 
     match /tickets/{docId} {
@@ -103,7 +104,7 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && incoming().diff(existing()).affectedKeys().hasOnly(['status'])
         && incoming().status in ['pending', 'confirmed', 'cancelled'];
-      allow delete: if isSignedIn();
+      allow delete: if isSignedIn() || isAdmin();
     }
 
     match /passports/{docId} {

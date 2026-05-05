@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, ArrowRight, Shield, Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import { auth, db } from '../firebase';
@@ -10,9 +10,15 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -119,6 +125,23 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  if (showSplash) {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-900 overflow-hidden">
+        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-overlay">
+          <source src="/PinDown.io__mariaemarenco8959_1777974949_np4j75.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-blue-900/30 backdrop-blur-md z-0"></div>
+        <div className="relative z-10 flex flex-col items-center animate-pulse">
+          <div className="w-24 h-24 bg-white/10 text-white rounded-3xl flex items-center justify-center mb-6 border border-white/20 shadow-[-10px_-10px_30px_4px_rgba(255,255,255,0.1),_10px_10px_30px_4px_rgba(8,112,184,0.15)] animate-bounce">
+            <Shield size={48} />
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-md">Carregando carteira...</h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen font-sans flex items-center justify-center p-4 overflow-hidden bg-slate-900">

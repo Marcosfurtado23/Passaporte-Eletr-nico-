@@ -498,16 +498,22 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
   const startVerification = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       setStream(mediaStream);
-      if (videoRef.current) videoRef.current.srcObject = mediaStream;
       navigator.geolocation.getCurrentPosition(
         (pos) => setLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-        (err) => console.error(err)
+        (err) => console.error("Geo error:", err)
       );
     } catch(err) { 
+       console.error("Camera error:", err);
        alert("Permissão de câmera negada ou indisponível. Por favor, adicione uma foto manualmente.");
        if (fileInputRef.current) {
          fileInputRef.current.click();
@@ -520,29 +526,45 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
     if (!file || !auth.currentUser) return;
     const reader = new FileReader();
     reader.onload = async (evt) => {
-       const dataUrl = evt.target?.result as string;
-       setSubmitting(true);
-       navigator.geolocation.getCurrentPosition(
-         (pos) => setLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-         (err) => console.error(err)
-       );
-       const userLocation = location || { lat: -23.5505, lng: -46.6333 };
-       try {
-         await setDoc(doc(db, 'verifications', auth.currentUser!.uid), {
-           userId: auth.currentUser!.uid,
-           photo: dataUrl,
-           location: userLocation,
-           status: 'pending',
-           createdAt: Date.now(),
-           updatedAt: Date.now()
-         });
-         setPhoto(dataUrl);
-       } catch(err) {
-         console.error(err);
-         alert("Erro ao salvar dados!");
-       } finally {
-         setSubmitting(false);
-       }
+       const result = evt.target?.result as string;
+       
+       // Downscale image
+       const img = new Image();
+       img.src = result;
+       img.onload = async () => {
+         const canvas = document.createElement('canvas');
+         const MAX_WIDTH = 600;
+         const scale = Math.min(MAX_WIDTH / img.width, 1);
+         canvas.width = img.width * scale;
+         canvas.height = img.height * scale;
+         const ctx = canvas.getContext('2d');
+         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+         setSubmitting(true);
+         navigator.geolocation.getCurrentPosition(
+           (pos) => setLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+           (err) => console.error(err)
+         );
+         
+         const userLocation = location || { lat: -23.5505, lng: -46.6333 };
+         try {
+           await setDoc(doc(db, 'verifications', auth.currentUser!.uid), {
+             userId: auth.currentUser!.uid,
+             photo: dataUrl,
+             location: userLocation,
+             status: 'pending',
+             createdAt: Date.now(),
+             updatedAt: Date.now()
+           });
+           setPhoto(dataUrl);
+         } catch(err) {
+           console.error(err);
+           alert("Erro ao salvar dados!");
+         } finally {
+           setSubmitting(false);
+         }
+       };
     };
     reader.readAsDataURL(file);
   }
@@ -551,9 +573,12 @@ function VerifyOverlay({ onClose }: { onClose: () => void }) {
     if (!videoRef.current || !auth.currentUser) return;
     setSubmitting(true);
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
+    const MAX_WIDTH = 600;
+    const scale = Math.min(MAX_WIDTH / videoRef.current.videoWidth, 1);
+    canvas.width = videoRef.current.videoWidth * scale;
+    canvas.height = videoRef.current.videoHeight * scale;
     canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     
     const userLocation = location || { lat: -23.5505, lng: -46.6333 }; // fallback to Sp if denied
     
