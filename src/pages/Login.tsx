@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Lock, ArrowRight, Shield, Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
@@ -251,7 +251,7 @@ export default function Login() {
         </button>
 
         <div className="mt-8 pt-6 border-t border-white/20 text-sm text-white/70">
-          É um administrador? <a href="/admin" className="text-white font-bold hover:text-white/90 drop-shadow-lg underline decoration-white/50 underline-offset-4">Portal ADM</a>
+          É um administrador? <Link to="/ADM" className="text-white font-bold hover:text-white/90 drop-shadow-lg underline decoration-white/50 underline-offset-4">Portal ADM</Link>
         </div>
       </div>
     </div>

@@ -10,7 +10,8 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/ADM" element={<Admin />} />
+        <Route path="/admin" element={<Navigate to="/ADM" replace />} />
       </Routes>
     </Router>
   );
