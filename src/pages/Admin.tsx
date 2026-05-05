@@ -39,7 +39,7 @@ export default function Admin() {
 function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [email, setEmail] = useState('marcossilva192024@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
@@ -120,7 +120,7 @@ function AdminLogin() {
                 disabled={loading}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder-white/40 backdrop-blur-md disabled:opacity-50"
-                placeholder="marcossilva192024@gmail.com"
+                placeholder="admin@email.com"
               />
             </div>
           </div>

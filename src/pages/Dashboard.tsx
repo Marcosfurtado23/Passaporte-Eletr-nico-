@@ -42,7 +42,7 @@ export default function Dashboard() {
         {activeTab === 'home' && <InicioTab onVerify={() => setShowVerify(true)} tick={tick} />}
         {activeTab === 'tickets' && <PassagensTab />}
         {activeTab === 'bank' && <BancoTab userData={userData} />}
-        {activeTab === 'profile' && <PerfilTab userData={userData} />}
+        {activeTab === 'profile' && <PerfilTab userData={userData} onVerify={() => setShowVerify(true)} />}
       </main>
 
       {/* Bottom Navigation */}
@@ -402,7 +402,7 @@ function TransactionItem({ title, date, amount, icon, bg, border = true }: any) 
   );
 }
 
-function PerfilTab({ userData }: { userData: any }) {
+function PerfilTab({ userData, onVerify }: { userData: any, onVerify: () => void }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -435,6 +435,7 @@ function PerfilTab({ userData }: { userData: any }) {
       </div>
 
       <div className="space-y-3">
+        <ProfileMenuItem icon={<ScanFace size={20} />} label="Verificação Facial & Localização" bg="bg-blue-600" onClick={onVerify} />
         <ProfileMenuItem icon={<User size={20} />} label="Informações pessoais" bg="bg-blue-600" />
         <ProfileMenuItem icon={<Settings size={20} />} label="Configurações" bg="bg-slate-700" />
         <ProfileMenuItem icon={<Lock size={20} />} label="Segurança" bg="bg-emerald-500" />
@@ -452,9 +453,9 @@ function PerfilTab({ userData }: { userData: any }) {
   );
 }
 
-function ProfileMenuItem({ icon, label, value, bg }: any) {
+function ProfileMenuItem({ icon, label, value, bg, onClick }: any) {
   return (
-    <button className="w-full flex items-center justify-between bg-[#111113] hover:bg-[#1a1a1e] transition-colors p-4 rounded-2xl border border-white/5">
+    <button onClick={onClick} className="w-full flex items-center justify-between bg-[#111113] hover:bg-[#1a1a1e] transition-colors p-4 rounded-2xl border border-white/5">
       <div className="flex items-center gap-4">
          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${bg}`}>
             {icon}

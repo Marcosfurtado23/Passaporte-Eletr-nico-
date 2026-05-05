@@ -131,6 +131,8 @@ service cloud.firestore {
         && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
         && incoming().status in ['pending', 'approved', 'rejected']
         && incoming().updatedAt == request.time.toMillis();
+      
+      allow delete: if isAdmin();
     }
 
     match /admins/{docId} {
