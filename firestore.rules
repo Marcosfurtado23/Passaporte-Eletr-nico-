@@ -119,9 +119,7 @@ service cloud.firestore {
       allow create: if isSignedIn() 
         && isValidId(docId) 
         && docId == request.auth.uid
-        && isValidVerification(incoming())
-        && incoming().createdAt == request.time.toMillis()
-        && incoming().updatedAt == request.time.toMillis();
+        && isValidVerification(incoming());
         
       // For demo purposes, any signed in user can read all verifications in the admin panel
       allow read: if isSignedIn(); 
@@ -130,7 +128,7 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
         && incoming().status in ['pending', 'approved', 'rejected']
-        && incoming().updatedAt == request.time.toMillis();
+        && incoming().updatedAt is number;
       
       allow delete: if isAdmin();
     }
